@@ -1,2 +1,2 @@
 ### BLC study
-### Go study
+### Go sudt

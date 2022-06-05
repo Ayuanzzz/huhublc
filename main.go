@@ -1,44 +1,23 @@
 package main
 
 import (
-	"log"
 	"fmt"
+	"huhuBLC/BLC"
+
 	"github.com/boltdb/bolt"
 )
 
 func main() {
-	// Open the my.db data file in your current directory.
-	// It will be created if it doesn't exist.
-	db, err := bolt.Open("my.db", 0600, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
+	bc := BLC.CreateBlockChainWithGenesisBlock()
 
-	//update
-	db.Update(func(tx *bolt.Tx) error {
-		//创建bucket
-		b, err := tx.CreateBucket([]byte("MyBucket"))
-		if err != nil {
-			return fmt.Errorf("create bucket: %s", err)
-		}
-		//写入数据
-		if b != nil{
-			err := b.Put([]byte("1"),[]byte("11"))
-			if err != nil{
-				return err
-			}
-		}
-		return nil
-	})
+	// bc.AddBlock([]byte("alice send 100 eth to bob"))
+	// bc.AddBlock([]byte("bob send 100 eth to alice"))
 
-	//read
-	db.View(func(tx *bolt.Tx) error{
-		//获取bucket
-		b:=tx.Bucket([]byte("MyBucket"))
-		if b != nil{
-			value := b.Get([]byte("1"))
-			fmt.Printf("value:%s\n", string(value))
+	bc.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("blocks"))
+		if b != nil {
+			hash := b.Get([]byte("1"))
+			fmt.Printf("hash: %v\n", hash)
 		}
 		return nil
 	})
