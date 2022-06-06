@@ -1,7 +1,9 @@
 package BLC
 
 import (
+	"fmt"
 	"log"
+	"math/big"
 
 	"github.com/boltdb/bolt"
 )
@@ -88,5 +90,35 @@ func (bc *BlockChain) AddBlock(data []byte) {
 	})
 	if err != nil {
 		log.Panicf("insert block to db failed %v", err)
+	}
+}
+
+//遍历数据库，输出所有区块信息
+func (bc *BlockChain) PrintChain() {
+	//读取数据库
+	fmt.Printf("blockchain info\n")
+	var curBlock *Block
+	bcit := bc.Iterator() //获取迭代器对象
+	//循环读取
+	//退出条件
+	for {
+		fmt.Printf("-----------------------------\n")
+		curBlock = bcit.Next()
+		//输出区块详情
+		fmt.Printf("Hash: %x\n", curBlock.Hash)
+		fmt.Printf("PrevBlockHash: %x\n", curBlock.PrevBlockHash)
+		fmt.Printf("TimeStamp: %v\n", curBlock.TimeStamp)
+		fmt.Printf("Data: %x\n", curBlock.Data)
+		fmt.Printf("Height: %v\n", curBlock.Height)
+		fmt.Printf("Nonce: %v\n", curBlock.Nonce)
+		//退出条件
+		//转换为big.int
+		var hashInt big.Int
+		hashInt.SetBytes(curBlock.PrevBlockHash)
+		//比较∏
+		if big.NewInt(0).Cmp(&hashInt) == 0 {
+			//遍历到创世区块
+			break
+		}
 	}
 }
