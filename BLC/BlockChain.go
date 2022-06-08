@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"os"
 
 	"github.com/boltdb/bolt"
 )
@@ -20,8 +21,22 @@ type BlockChain struct {
 	Tip []byte   //保存最新区块的哈希值
 }
 
+//判断数据库文件是否存在
+func dbExist() bool {
+	if _, err := os.Stat(dbName); os.IsNotExist(err) {
+		//数据库文件不存在
+		return false
+	}
+	return true
+}
+
 //初始化区块链
 func CreateBlockChainWithGenesisBlock() *BlockChain {
+	if dbExist() {
+		//文件已存在，创世区块已存在
+		fmt.Printf("创世区块已存在...\n")
+		os.Exit(1)
+	}
 	//保存最新区块的哈希值
 	var blockHash []byte
 	//1.创建或者打开一个数据库
@@ -121,4 +136,26 @@ func (bc *BlockChain) PrintChain() {
 			break
 		}
 	}
+}
+
+//获取一个blockchain对象
+func BlockchainObject() *BlockChain {
+	//获取DB
+	db, err := bolt.Open(dbName, 0600, nil)
+	if nil != err {
+		log.Panicf("open the db [%s] failed %v\n", dbName, err)
+	}
+	//获取Tip
+	var tip []byte
+	err = db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blockTableName))
+		if nil != b {
+			tip = b.Get([]byte("1"))
+		}
+		return nil
+	})
+	if nil != err {
+		log.Panicf("get the blockchain object failed %v\n", err)
+	}
+	return &BlockChain{DB: db, Tip: tip}
 }
