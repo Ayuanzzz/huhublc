@@ -17,17 +17,17 @@ type CLI struct {
 func PrintUsage() {
 	fmt.Printf("Usage:\n")
 	//初始化区块链
-	fmt.Printf("createblockchain\n")
+	fmt.Printf("\tcreateblockchain -address address\n")
 	//添加区块
-	fmt.Printf("addblock\n")
+	fmt.Printf("\taddblock -data DATA\n")
 	//打印完整的区块信息
-	fmt.Printf("printchain\n")
+	fmt.Printf("\tprintchain\n")
 
 }
 
 //初始化区块链
-func (cli *CLI) createBlockchain(txs []*Transaction) {
-	CreateBlockChainWithGenesisBlock(txs)
+func (cli *CLI) createBlockchain(address string) {
+	CreateBlockChainWithGenesisBlock(address)
 }
 
 //添加区块
@@ -74,7 +74,10 @@ func (cli *CLI) Run() {
 	createBLCWithGenesisBlockCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 
 	//数据参数处理
+	//添加区块
 	flagAddBlockArg := addBlockCmd.String("data", "send 100 to wawa", "添加区块数据")
+	//创建区块链时指定的矿工地址(接受奖励)
+	flagCreateBlockchainArg := createBLCWithGenesisBlockCmd.String("address", "huhu", "指定接受系统奖励的矿工地址")
 
 	//判断命令
 	switch os.Args[1] {
@@ -109,6 +112,10 @@ func (cli *CLI) Run() {
 	}
 	//创建区块链命令
 	if createBLCWithGenesisBlockCmd.Parsed() {
-		cli.createBlockchain([]*Transaction{})
+		if *flagCreateBlockchainArg == "" {
+			PrintUsage()
+			os.Exit(1)
+		}
+		cli.createBlockchain(*flagCreateBlockchainArg)
 	}
 }

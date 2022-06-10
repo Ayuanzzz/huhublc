@@ -31,7 +31,7 @@ func dbExist() bool {
 }
 
 //初始化区块链
-func CreateBlockChainWithGenesisBlock(txs []*Transaction) *BlockChain {
+func CreateBlockChainWithGenesisBlock(address string) *BlockChain {
 	if dbExist() {
 		//文件已存在，创世区块已存在
 		fmt.Printf("创世区块已存在...\n")
@@ -53,8 +53,10 @@ func CreateBlockChainWithGenesisBlock(txs []*Transaction) *BlockChain {
 			if err != nil {
 				log.Panicf("create bucket [%s] failed %v\n", dbName, err)
 			}
+			//生成一个coinbase交易
+			txCoinbase := NewCoinbaseTransaction(address)
 			//生成创世区块
-			genesisBlock := CreateGenesisBlock(txs)
+			genesisBlock := CreateGenesisBlock([]*Transaction{txCoinbase})
 			//存储
 			//key--hash
 			//value--序列化
