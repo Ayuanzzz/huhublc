@@ -31,7 +31,7 @@ func dbExist() bool {
 }
 
 //初始化区块链
-func CreateBlockChainWithGenesisBlock() *BlockChain {
+func CreateBlockChainWithGenesisBlock(txs []*Transaction) *BlockChain {
 	if dbExist() {
 		//文件已存在，创世区块已存在
 		fmt.Printf("创世区块已存在...\n")
@@ -54,7 +54,7 @@ func CreateBlockChainWithGenesisBlock() *BlockChain {
 				log.Panicf("create bucket [%s] failed %v\n", dbName, err)
 			}
 			//生成创世区块
-			genesisBlock := CreateGenesisBlock([]byte("init blockchain"))
+			genesisBlock := CreateGenesisBlock(txs)
 			//存储
 			//key--hash
 			//value--序列化
@@ -76,7 +76,7 @@ func CreateBlockChainWithGenesisBlock() *BlockChain {
 }
 
 //添加区块到区块链中
-func (bc *BlockChain) AddBlock(data []byte) {
+func (bc *BlockChain) AddBlock(txs []*Transaction) {
 	//更新区块数据(insert)
 	err := bc.DB.Update(func(tx *bolt.Tx) error {
 		//1.获取bucket
@@ -87,7 +87,7 @@ func (bc *BlockChain) AddBlock(data []byte) {
 			//3.区块数据反序列化
 			latest_block := DeserialiezBlock(blockBytes)
 			//4.新建区块
-			newBlock := NewBlock(latest_block.Height+1, latest_block.Hash, data)
+			newBlock := NewBlock(latest_block.Height+1, latest_block.Hash, txs)
 			//5.存入数据库
 			err := b.Put(newBlock.Hash, newBlock.Serialize())
 			if err != nil {
@@ -123,7 +123,7 @@ func (bc *BlockChain) PrintChain() {
 		fmt.Printf("Hash: %x\n", curBlock.Hash)
 		fmt.Printf("PrevBlockHash: %x\n", curBlock.PrevBlockHash)
 		fmt.Printf("TimeStamp: %v\n", curBlock.TimeStamp)
-		fmt.Printf("Data: %x\n", curBlock.Data)
+		fmt.Printf("Txs: %x\n", curBlock.Txs)
 		fmt.Printf("Height: %v\n", curBlock.Height)
 		fmt.Printf("Nonce: %v\n", curBlock.Nonce)
 		//退出条件
