@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"strconv"
 
 	"github.com/boltdb/bolt"
 )
@@ -125,9 +126,23 @@ func (bc *BlockChain) PrintChain() {
 		fmt.Printf("Hash: %x\n", curBlock.Hash)
 		fmt.Printf("PrevBlockHash: %x\n", curBlock.PrevBlockHash)
 		fmt.Printf("TimeStamp: %v\n", curBlock.TimeStamp)
-		fmt.Printf("Txs: %x\n", curBlock.Txs)
 		fmt.Printf("Height: %v\n", curBlock.Height)
 		fmt.Printf("Nonce: %v\n", curBlock.Nonce)
+		fmt.Printf("Txs: %x\n", curBlock.Txs)
+		for _, tx := range curBlock.Txs {
+			fmt.Printf("\ttx-hash:%x\n", tx.TxHash)
+			fmt.Printf("\t输入...\n")
+			for _, vin := range tx.Vins {
+				fmt.Printf("\t\tvin-txHash:%x\n", vin.TxHash)
+				fmt.Printf("\t\tvin-vout:%v\n", vin.Vout)
+				fmt.Printf("\t\tvin-scriptsig:%s\n", vin.ScriptSig)
+			}
+			fmt.Printf("\t输出...\n")
+			for _, vout := range tx.Vouts {
+				fmt.Printf("\t\tvout-value:%d\n", vout.Value)
+				fmt.Printf("\t\tvout-scriptPubkey:%s\n", vout.ScriptPubkey)
+			}
+		}
 		//退出条件
 		//转换为big.int
 		var hashInt big.Int
@@ -160,4 +175,48 @@ func BlockchainObject() *BlockChain {
 		log.Panicf("get the blockchain object failed %v\n", err)
 	}
 	return &BlockChain{DB: db, Tip: tip}
+}
+
+//实现挖矿功能
+//通过接收交易，生成区块
+func (blockchain *BlockChain) MineNewBlock(from, to, amount []string) {
+	//搁置交易生成步骤
+	var block *Block
+	var txs []*Transaction
+	value, _ := strconv.Atoi(amount[0])
+	//生成新的交易
+	tx := NewSimpleTransaction(from[0], to[0], value)
+	txs = append(txs, tx)
+	//从数据库中获取最新一个区块
+	blockchain.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blockTableName))
+		if nil != b {
+			//获取最新的区块哈希值
+			hash := b.Get([]byte("1"))
+			//获取最新区块
+			blockBytes := b.Get(hash)
+			//反序列化
+			block = DeserialiezBlock(blockBytes)
+		}
+		return nil
+	})
+	//通过数据库中最新的区快生成新的区块
+	block = NewBlock(block.Height+1, block.Hash, txs)
+	//持久化新生成的区块到数据库
+	blockchain.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blockTableName))
+		if nil != b {
+			err := b.Put(block.Hash, block.Serialize())
+			if nil != err {
+				log.Panicf("update the new block to DB failed %v\n", err)
+			}
+			//更新最新区块的哈希值
+			err = b.Put([]byte("1"), block.Hash)
+			if nil != err {
+				log.Panicf("update the latest block to DB failed %v\n", err)
+			}
+			blockchain.Tip = block.Hash
+		}
+		return nil
+	})
 }

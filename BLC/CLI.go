@@ -28,8 +28,7 @@ func PrintUsage() {
 	fmt.Printf("\t\t-from FROM -- 转账原地址\n")
 	fmt.Printf("\t\t-to TO -- 转账目标地址\n")
 	fmt.Printf("\t\t-amount AMOUNT --转账金额\n")
-	//执行命令格式
-	// send -from [\"huhu\"] -to [\"jiji\"] -amount [\"100\"]
+
 }
 
 //参数数量检查函数
@@ -42,7 +41,15 @@ func IsValidArgs() {
 }
 
 //发起交易
-func (cli *CLI) send() {
+func (cli *CLI) send(from, to, amount []string) {
+	if !dbExist() {
+		fmt.Println("数据库不存在...")
+		os.Exit(1)
+	}
+	//获取区块链对象
+	blockchain := BlockchainObject()
+	defer blockchain.DB.Close()
+	blockchain.MineNewBlock(from, to, amount)
 
 }
 
@@ -138,7 +145,7 @@ func (cli *CLI) Run() {
 		fmt.Printf("flagSendFromArg: %s\n", JSONToSlice(*flagSendFromArg))
 		fmt.Printf("flagSendAmountArg: %s\n", JSONToSlice(*flagSendAmountArg))
 		fmt.Printf("flagSendToArg: %s\n", JSONToSlice(*flagSendToArg))
-
+		cli.send(JSONToSlice(*flagSendFromArg), JSONToSlice(*flagSendToArg), JSONToSlice(*flagSendAmountArg))
 	}
 	//添加区块命令
 	if addBlockCmd.Parsed() {

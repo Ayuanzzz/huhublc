@@ -5,7 +5,7 @@ package BLC
 //输出结构
 type TxOutput struct {
 	//金额
-	value int
+	Value int
 	//用户名(UTXO的所有者)
 	ScriptPubkey string
 }

@@ -50,3 +50,23 @@ func (tx *Transaction) HashTransaction() {
 	hash := sha256.Sum256(result.Bytes())
 	tx.TxHash = hash[:]
 }
+
+//生成普通转账交易
+func NewSimpleTransaction(from string, to string, amount int) *Transaction {
+	var txInputs []*TxInput   //输入列表
+	var txOutputs []*TxOutput //输出列表
+	//输入
+	txInput := &TxInput{[]byte("ce91209175005c8425e0681bf6190b8f08dd4f20701f35d780fea052ea4a0835"), 0, from}
+	txInputs = append(txInputs, txInput)
+	//输出(转账源)
+	txOutput := &TxOutput{amount, to}
+	txOutputs = append(txOutputs, txOutput)
+	//输出(找零)
+	if amount < 10 {
+		txOutput = &TxOutput{10 - amount, from}
+		txOutputs = append(txOutputs, txOutput)
+	}
+	tx := Transaction{nil, txInputs, txOutputs}
+	tx.HashTransaction()
+	return &tx
+}
